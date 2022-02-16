@@ -4,7 +4,7 @@ from toys.models import Toy
 
 
 class ToySerializer(serializers.ModelSerializer):
-    """Serializer for the toy object."""
+    """Serializer for the toy object. May have to come back to book page 43"""
 
     class Meta:
         model = Toy
