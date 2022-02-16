@@ -4,7 +4,6 @@ from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework import status
 from rest_framework.renderers import JSONRenderer
-from rest_framework.parsers import JSONParser
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -91,7 +90,7 @@ def toy_raw_sql_view(request):
                 # toys_serializer = ToySerializer(toy_rows, many=True)
                 return JSONResponse(toy_rows)
         except ConnectionError:
-            return JSONResponse(status=status.HTTP_400_BAD_REQUEST)
+            return JSONResponse({"message": "some error"}, status=status.HTTP_400_BAD_REQUEST)
 
 # ---- SQL sample section ends
 
