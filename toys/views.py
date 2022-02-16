@@ -1,10 +1,10 @@
 from django.http import HttpResponse
-from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+from django.db import connection
+
 from rest_framework import status
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
-from django.db import connection
 
 from toys.models import Toy
 from toys.serializers import ToySerializer
