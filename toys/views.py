@@ -24,12 +24,21 @@ class JSONResponse(HttpResponse):
 @csrf_exempt
 def toy_list_view(request):
     if request.method == "GET":
-        toys = Toy.objects.all()
+        toys = Toy.objects.all().order_by("-id")
         toys_serializer = ToySerializer(toys, many=True)
         print(toys_serializer.data)
         return JSONResponse(toys_serializer.data)
 
+    elif request.method == "POST":
+        toy = JSONParser().parse(request)
+        toy_serializer = ToySerializer(data=toy)
+        if toy_serializer.is_valid():
+            toy_serializer.save()
+            return JSONResponse(toy_serializer.data, status=status.HTTP_201_CREATED)
+        return JSONResponse(toy_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+# ---- SQL sample section starts
 @csrf_exempt
 def toy_sql_view(request):
     if request.method == "GET":
@@ -38,6 +47,7 @@ def toy_sql_view(request):
         return JSONResponse(toys_serializer.data)
 
 
+@csrf_exempt
 def toy_aggregate_view(request):
     try:
         with connection.cursor() as cursor:
@@ -83,6 +93,8 @@ def toy_raw_sql_view(request):
         except ConnectionError:
             return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
 
+# ---- SQL sample section ends
+
 
 @csrf_exempt
 def toy_detail_view(request, pk):
@@ -94,6 +106,7 @@ def toy_detail_view(request, pk):
     if request.method == "GET":
         toy_serializer = ToySerializer(toy)
         return JSONResponse(toy_serializer.data)
+
     elif request.method == "PUT":
         toy_data = JSONParser().parse(request)
         toy_serializer = ToySerializer(toy, data=toy_data)
@@ -101,6 +114,7 @@ def toy_detail_view(request, pk):
             toy_serializer.save()
             return JSONResponse(toy_serializer.data)
         return JSONResponse(toy_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     elif request.method == "DELETE":
         toy.delete()
         return HttpResponse(status=status.HTTP_204_NO_CONTENT)
