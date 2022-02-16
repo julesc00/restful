@@ -33,15 +33,24 @@ def toy_list_view(request):
 @csrf_exempt
 def toy_sql_view(request):
     if request.method == "GET":
-        toys = Toy.objects.raw("SELECT * FROM toys_toy")
+        toys = Toy.objects.raw("""SELECT * FROM toys_toy""")
         toys_serializer = ToySerializer(toys, many=True)
         return JSONResponse(toys_serializer.data)
+
+
+def toy_aggregate_view(request):
+    try:
+        with connection.cursor() as cursor:
+            toys_count = cursor.execute("""SELECT COUNT(*) FROM toys_toy""")
+            return JSONResponse(toys_count)
+    except ConnectionError:
+        return JSONResponse({"message": "Something's wrong"})
 
 
 @csrf_exempt
 def toy_raw_sql_view(request):
     """
-    The response appears as list of lists.
+    The response appears as a list of lists.
 
     [
     [
@@ -56,7 +65,7 @@ def toy_raw_sql_view(request):
     [
         3,
         "Woody the Astronaut",
-        "Woody as an galactic astronaut.",
+        "Woody as a galactic astronaut.",
         "Super Heroes",
         "2022-02-16T16:05:08.383561",
         false,
@@ -65,11 +74,14 @@ def toy_raw_sql_view(request):
 ]
     """
     if request.method == "GET":
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM toys_toy")
-            toy_rows = cursor.fetchall()
-            # toys_serializer = ToySerializer(toy_rows, many=True)
-            return JSONResponse(toy_rows)
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM toys_toy")
+                toy_rows = cursor.fetchall()
+                # toys_serializer = ToySerializer(toy_rows, many=True)
+                return JSONResponse(toy_rows)
+        except ConnectionError:
+            return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
 
 
 @csrf_exempt
