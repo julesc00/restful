@@ -1,16 +1,18 @@
+from django.db import connection
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.db import connection
 
 from rest_framework import status
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 from toys.models import Toy
 from toys.serializers import ToySerializer
 
 """
-Function-based Non-abstract approach
+Function-based Non-abstract approach with api_view
 """
 
 
@@ -21,21 +23,19 @@ class JSONResponse(HttpResponse):
         super(JSONResponse, self).__init__(content, *args, **kwargs)
 
 
-@csrf_exempt
+@api_view(["GET", "POST"])
 def toy_list_view(request):
     if request.method == "GET":
         toys = Toy.objects.all().order_by("-id")
         toys_serializer = ToySerializer(toys, many=True)
-        print(toys_serializer.data)
-        return JSONResponse(toys_serializer.data)
+        return Response(toys_serializer.data)
 
     elif request.method == "POST":
-        toy = JSONParser().parse(request)
-        toy_serializer = ToySerializer(data=toy)
+        toy_serializer = ToySerializer(data=request.data)
         if toy_serializer.is_valid():
             toy_serializer.save()
-            return JSONResponse(toy_serializer.data, status=status.HTTP_201_CREATED)
-        return JSONResponse(toy_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(toy_serializer.data, status=status.HTTP_201_CREATED)
+        return Response(toy_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # ---- SQL sample section starts
@@ -91,30 +91,29 @@ def toy_raw_sql_view(request):
                 # toys_serializer = ToySerializer(toy_rows, many=True)
                 return JSONResponse(toy_rows)
         except ConnectionError:
-            return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+            return JSONResponse(status=status.HTTP_400_BAD_REQUEST)
 
 # ---- SQL sample section ends
 
 
-@csrf_exempt
+@api_view(["GET", "PUT", "DELETE"])
 def toy_detail_view(request, pk):
     try:
         toy = Toy.objects.filter(pk=pk).first()
     except Toy.DoesNotExist:
-        return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
     if request.method == "GET":
         toy_serializer = ToySerializer(toy)
-        return JSONResponse(toy_serializer.data)
+        return Response(toy_serializer.data)
 
     elif request.method == "PUT":
-        toy_data = JSONParser().parse(request)
-        toy_serializer = ToySerializer(toy, data=toy_data)
+        toy_serializer = ToySerializer(toy, data=request.data)
         if toy_serializer.is_valid():
             toy_serializer.save()
-            return JSONResponse(toy_serializer.data)
-        return JSONResponse(toy_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(toy_serializer.data)
+        return Response(toy_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     elif request.method == "DELETE":
         toy.delete()
-        return HttpResponse(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_204_NO_CONTENT)
