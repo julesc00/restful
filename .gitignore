@@ -196,7 +196,7 @@ toys/migrations
 
 # SageMath parsed files
 *.sage.py
-
+drones/migrations
 # Environments
 .env
 .venv
